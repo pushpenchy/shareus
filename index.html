@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ledger — Publisher Payments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0F1729;
+    --panel:#1A2540;
+    --panel-hi:#212D4C;
+    --page:#F7F8FA;
+    --card:#FFFFFF;
+    --line:#E4E7ED;
+    --text:#141A2E;
+    --muted:#64748B;
+    --teal:#2DD4BF;
+    --teal-dim:#0F766E;
+    --amber:#F59E0B;
+    --amber-dim:#92400E;
+    --red:#E4573D;
+    --radius-sm:6px;
+    --radius-md:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Inter',sans-serif;background:var(--page);color:var(--text);}
+  .mono{font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;}
+  a{color:inherit;}
+
+  .app{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{
+    width:248px;flex-shrink:0;background:var(--ink);color:#C7CEDD;
+    display:flex;flex-direction:column;padding:24px 16px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 28px;}
+  .brand-mark{
+    width:30px;height:30px;border-radius:8px;
+    background:linear-gradient(135deg,var(--teal),var(--teal-dim));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'IBM Plex Mono';font-weight:600;color:#06231F;font-size:15px;
+  }
+  .brand-name{font-weight:600;color:#fff;font-size:15px;letter-spacing:.2px;}
+  .brand-sub{font-size:11px;color:#6E7A94;margin-top:1px;}
+
+  .nav{display:flex;flex-direction:column;gap:2px;margin-top:4px;}
+  .nav a{
+    display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-sm);
+    font-size:13.5px;font-weight:500;color:#AEB8CC;text-decoration:none;transition:background .12s;
+  }
+  .nav a svg{width:17px;height:17px;flex-shrink:0;opacity:.85;}
+  .nav a:hover{background:var(--panel);color:#fff;}
+  .nav a.active{background:var(--panel-hi);color:#fff;box-shadow:inset 2px 0 0 var(--teal);}
+
+  .sidebar-foot{margin-top:auto;padding-top:20px;border-top:1px solid #223054;font-size:12px;color:#6E7A94;}
+  .sidebar-foot .row{display:flex;justify-content:space-between;margin-bottom:6px;}
+  .sidebar-foot a{color:var(--teal);text-decoration:none;}
+
+  /* Main */
+  .main{flex:1;min-width:0;}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 32px;background:var(--card);border-bottom:1px solid var(--line);
+  }
+  .topbar h1{font-size:16px;margin:0;font-weight:600;}
+  .status-pill{
+    display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;
+    padding:6px 12px;border-radius:999px;background:#ECFDF5;color:#0F7A5C;
+  }
+  .status-pill::before{content:"";width:6px;height:6px;border-radius:50%;background:#0F9D66;}
+
+  .content{padding:28px 32px 60px;max-width:1180px;}
+
+  .notice{
+    background:#FBF7EE;border:1px solid #EFE3C6;border-radius:var(--radius-md);
+    padding:16px 20px;margin-bottom:26px;font-size:13.5px;line-height:1.6;color:#5B4A22;
+  }
+  .notice strong{display:block;font-size:13.5px;color:#3F3216;margin-bottom:6px;}
+
+  .section-title{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.3px;margin:0 0 14px;}
+
+  .balance-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:16px;margin-bottom:30px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);padding:20px 22px;}
+  .card-label{font-size:12.5px;color:var(--muted);margin-bottom:4px;}
+  .card-label .hint{cursor:help;border-bottom:1px dotted var(--muted);}
+  .card-figure{font-size:30px;font-weight:600;margin:6px 0 14px;letter-spacing:-.5px;}
+  .card.primary .card-figure{color:var(--ink);}
+  .card-tag{display:inline-block;font-size:11px;font-weight:600;padding:3px 8px;border-radius:5px;}
+  .tag-teal{background:#E7FBF8;color:var(--teal-dim);}
+  .tag-amber{background:#FEF3E2;color:var(--amber-dim);}
+  .tag-muted{background:#F1F3F6;color:var(--muted);}
+
+  .actions{display:flex;gap:10px;margin-top:2px;}
+  .btn{
+    border:none;border-radius:var(--radius-sm);padding:10px 16px;font-size:13.5px;font-weight:600;
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:filter .12s,transform .05s;
+  }
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--ink);color:#fff;}
+  .btn-primary:hover{filter:brightness(1.2);}
+  .btn-ghost{background:#F1F3F6;color:var(--text);}
+  .btn-ghost:hover{background:#E7EAEF;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  .table-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden;}
+  .table-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;border-bottom:1px solid var(--line);gap:16px;flex-wrap:wrap;
+  }
+  .range-picker{
+    display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 12px;
+    border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--page);cursor:pointer;
+  }
+  .filter-tabs{display:flex;gap:4px;}
+  .filter-tabs button{
+    border:none;background:transparent;padding:7px 12px;border-radius:999px;font-size:12.5px;
+    font-weight:500;color:var(--muted);cursor:pointer;
+  }
+  .filter-tabs button.active{background:var(--ink);color:#fff;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.3px;
+    padding:12px 20px;border-bottom:1px solid var(--line);white-space:nowrap;
+  }
+  tbody td{padding:13px 20px;border-bottom:1px solid var(--line);white-space:nowrap;color:var(--text);}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAFBFC;}
+  .status-chip{font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:5px;}
+  .st-paid{background:#E7FBF8;color:var(--teal-dim);}
+  .st-processing{background:#FEF3E2;color:var(--amber-dim);}
+  .st-hold{background:#FDECEA;color:#A6362A;}
+  .amt-pos{color:var(--teal-dim);font-weight:600;}
+
+  .empty{padding:48px 20px;text-align:center;color:var(--muted);font-size:13.5px;}
+
+  .table-foot{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;font-size:12.5px;color:var(--muted);}
+  .pager{display:flex;gap:6px;}
+  .pager button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:6px 12px;font-size:12.5px;cursor:pointer;}
+  .pager button:disabled{opacity:.4;cursor:not-allowed;}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(15,23,41,.5);display:none;align-items:center;justify-content:center;z-index:50;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:#fff;border-radius:var(--radius-md);width:380px;padding:24px;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal h3{margin:0 0 4px;font-size:16px;}
+  .modal p{margin:0 0 18px;font-size:13px;color:var(--muted);}
+  .modal label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin-bottom:6px;}
+  .modal input{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);
+    font-family:'IBM Plex Mono';font-size:14px;margin-bottom:16px;
+  }
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+  .toast{
+    position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:14px 18px;
+    border-radius:var(--radius-sm);font-size:13.5px;display:flex;align-items:center;gap:10px;
+    transform:translateY(20px);opacity:0;transition:all .25s;z-index:60;
+  }
+  .toast.show{transform:translateY(0);opacity:1;}
+
+  @media (max-width:900px){
+    .sidebar{display:none;}
+    .balance-row{grid-template-columns:1fr;}
+    .content{padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">L</div>
+      <div>
+        <div class="brand-name">Shareus</div>
+        <div class="brand-sub">Publisher payments</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>Sites</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M11 19V4M18 19v-7"/></svg>Reporting</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>Referrals</a>
+      <a href="#" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>Payments</a>
+      <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z"/></svg>Policy Center</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="row"><span>Support</span><a href="mailto:support@ledger.app">support@ledger.app</a></div>
+      <div class="row"><span>Status</span><span>All systems normal</span></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h1>Payments</h1>
+      <span class="status-pill">Account active</span>
+    </div>
+
+    <div class="content">
+
+      <div class="notice">
+        <strong>Payout schedule note</strong>
+        Payouts now run on a monthly cycle aligned to when ad-network revenue settles. Earnings from a given month are added to your wallet by the 25th of the following month, after a standard traffic-quality review, and become withdrawable the following week. This keeps payouts accurate and reduces reversals.
+      </div>
+
+      <div class="section-title">Wallet</div>
+      <div class="balance-row">
+        <div class="card primary">
+          <div class="card-label">Available to withdraw</div>
+          <div class="card-figure mono" id="availBalance">$845.56</div>
+          <div class="actions">
+            <button class="btn btn-primary" id="withdrawBtn">Withdraw funds</button>
+            <button class="btn btn-ghost" id="profileBtn">Payment profile</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Hold balance <span class="hint" title="Revenue pending the traffic-quality review before it clears to your available balance.">ⓘ</span></div>
+          <div class="card-figure mono">$8531.00</div>
+          <span class="card-tag tag-amber">Clears Oct 13</span>
+        </div>
+        <div class="card">
+          <div class="card-label">Total withdrawn</div>
+          <div class="card-figure mono" id="totalWithdrawn">$8,940.12</div>
+          <span class="card-tag tag-muted">All time</span>
+        </div>
+      </div>
+
+      <div class="section-title">Transactions</div>
+      <div class="table-card">
+        <div class="table-head">
+          <div class="filter-tabs" id="filterTabs">
+            <button class="active" data-f="all">All</button>
+            <button data-f="paid">Paid</button>
+            <button data-f="processing">Processing</button>
+            <button data-f="hold">On hold</button>
+          </div>
+          <div class="range-picker">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
+            Sep 01 – Sep 08, 2026
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Site</th><th>Date</th><th>Status</th><th>Transaction ID</th>
+              <th>Method</th><th>Amount</th><th>Fee</th><th>Payout</th>
+            </tr>
+          </thead>
+          <tbody id="txBody"></tbody>
+        </table>
+        <div class="table-foot">
+          <span id="rowCount">— rows</span>
+          <div class="pager">
+            <button id="prevPage" disabled>Previous</button>
+            <button id="nextPage" disabled>Next</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>Withdraw funds</h3>
+    <p>Sent to your saved payout method. Funds usually settle in 2–3 business days.</p>
+    <label>Amount (USD)</label>
+    <input type="number" id="withdrawInput" placeholder="0.00">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="cancelWithdraw">Cancel</button>
+      <button class="btn btn-primary" id="confirmWithdraw">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const fmt = n => n.toLocaleString('en-US',{style:'currency',currency:'USD'});
+
+  let state = {
+    available: 0.00,
+    withdrawn: 5234.00,
+    tx: [
+      {site:'dailyfeedhub.com', date:'2026-09-05', status:'processing', id:'TXN-88213', method:'Bank transfer', amount:5240.12, fee:6.12},
+      {site:'techbriefly.io', date:'2026-09-05', status:'hold', id:'TXN-88155', method:'Bank transfer', amount:8531.00, fee:9.40},
+    ]
+  };
+
+  let activeFilter = 'all';
+
+  function statusChip(s){
+    const map = {paid:['st-paid','Paid'], processing:['st-processing','Processing'], hold:['st-hold','On hold']};
+    const [cls,label] = map[s];
+    return `<span class="status-chip ${cls}">${label}</span>`;
+  }
+
+  function render(){
+    document.getElementById('availBalance').textContent = fmt(state.available);
+    document.getElementById('totalWithdrawn').textContent = fmt(state.withdrawn);
+
+    const rows = state.tx.filter(t => activeFilter==='all' ? true : t.status===activeFilter);
+    const body = document.getElementById('txBody');
+
+    if(rows.length===0){
+      body.innerHTML = `<tr><td colspan="8"><div class="empty">No transactions match this filter.</div></td></tr>`;
+    } else {
+      body.innerHTML = rows.map(t => `
+        <tr>
+          <td>${t.site}</td>
+          <td class="mono">${t.date}</td>
+          <td>${statusChip(t.status)}</td>
+          <td class="mono">${t.id}</td>
+          <td>${t.method}</td>
+          <td class="mono amt-pos">${fmt(t.amount)}</td>
+          <td class="mono">${fmt(t.fee)}</td>
+          <td class="mono">${fmt(t.amount - t.fee)}</td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('rowCount').textContent = `${rows.length} row${rows.length!==1?'s':''}`;
+  }
+
+  document.getElementById('filterTabs').addEventListener('click', e=>{
+    if(e.target.tagName!=='BUTTON') return;
+    document.querySelectorAll('#filterTabs button').forEach(b=>b.classList.remove('active'));
+    e.target.classList.add('active');
+    activeFilter = e.target.dataset.f;
+    render();
+  });
+
+  const overlay = document.getElementById('overlay');
+  const toast = document.getElementById('toast');
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=>toast.classList.remove('show'), 2600);
+  }
+
+  document.getElementById('withdrawBtn').onclick = ()=>{
+    document.getElementById('withdrawInput').value = '';
+    overlay.classList.add('show');
+  };
+  document.getElementById('cancelWithdraw').onclick = ()=> overlay.classList.remove('show');
+  document.getElementById('profileBtn').onclick = ()=> showToast('Payment profile settings would open here.');
+
+  document.getElementById('confirmWithdraw').onclick = ()=>{
+    const val = parseFloat(document.getElementById('withdrawInput').value);
+    if(!val || val<=0){ showToast('Enter a valid amount.'); return; }
+    if(val > state.available){ showToast('Amount exceeds available balance.'); return; }
+    state.available -= val;
+    state.withdrawn += val;
+    overlay.classList.remove('show');
+    render();
+    showToast(`Withdrawal of ${fmt(val)} initiated.`);
+  };
+
+  render();
+</script>
+</body>
+</html>
